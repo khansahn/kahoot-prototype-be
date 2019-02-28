@@ -1,0 +1,76 @@
+- login
+- register
+- reset-password
+
+- users >> mungkin buat profile
+{
+    user-id
+    username
+    password
+    email
+    game-history: [
+        {
+            question-id
+            points
+            rank
+        },
+        {
+            question-id
+            points
+            rank
+        },
+    ]
+    profile-picture
+}
+- questions (and answer)
+{
+    questions-id
+    questions-name
+    questions-rating: []
+    questions-category
+    question-list: [
+        {
+            question-number
+            question
+            answer
+            options: [
+                {
+                    option-id
+                    option
+                }
+            ]
+            timer
+        }
+    ]
+}
+    - rating
+    - report
+    - category
+
+- game
+    - info >> untuk pin tertentu, dia soalnya yang mana
+    {
+        game-pin
+        questions-id
+        users: {
+            user-id
+            username
+        }
+        leaderboards: [
+            {
+                user-id
+                username
+                score
+            }
+        ]
+    }
+    - leaderboards
+    - answers
+    {
+        user-id
+        game-pin
+        questions-id
+        question-number
+        option-id
+    }
+    - pin >> generate random pin, buat bikin game info
