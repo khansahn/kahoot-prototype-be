@@ -45,7 +45,6 @@ def createQuestion():
                 quizIdToCreateQuestion = str(quiz["quiz-id"])
                 break
     
-        print("###############", isQuizFound)
         isQuestionIdIsUsed = False
         if isQuizFound == True:            
             try: 
@@ -54,7 +53,6 @@ def createQuestion():
                 print("nambahin question pertama di kuis ini yaaa")
             else:
                 response["message"] = "nambah question di quiz " + str(body["quiz-id"])
-                print("asdaksjdhkasjdhkas",quizIdToCreateQuestion)
                 for question in questionData["questions"]:
                     if int(question["quiz-id"]) == int(quizIdToCreateQuestion) :
                         if question["question-id"] == int(body["question-id"]) :
@@ -87,6 +85,7 @@ def getAllQuestion():
         "message" : "",
         "data" : {}
     }
+
     try: 
         questionData = readFile(questionFileLocation)
     except:
@@ -190,36 +189,7 @@ def updateDeleteQuestion(quizId,questionId):
             writeFile(questionFileLocation,toBeWritten)
         else:
             response["message"] = "question yang mana ya ga ketemu"
-    
-    '''
-    questionData = readFile(questionFileLocation)
-
-    # nyari question yang mau di-update atau di-delete
-    position = -1
-    for i in range(len(questionData["questions"])) :
-        if (questionData["questions"][i]["quiz-id"] == int(quizId) and questionData["questions"][i]["question-id"] == int(questionId)):
-            position = i
-            break
-
-    if (position == -1) :
-        res = "ih ga ada datanya ah kak"
-        return res
-    else : 
-        res = str(questionData["questions"][position]["quiz-id"]) + " yang nomor " + str(questionData["questions"][position]["question-id"])
-
-        # kalau ketemu data nya baru dipisah antara PUT dan DELETE nyaaa
-        if request.method == "PUT" :
-            body = request.json
-            questionData["questions"][position] = {**questionData["questions"][position], **body}
-
-        elif request.method == "DELETE" :
-            del questionData["questions"][position]
-            
-
-        toBeWritten = str(json.dumps(questionData))
-        writeFile(questionFileLocation,toBeWritten)
-    '''
-
+   
     return jsonify(response)
 
 #################################################################################

@@ -71,46 +71,9 @@ def registerUser():
         response["data"] = body
         response["error"] = False
         # atau mau response["data"] = registeredUserData
-        # res = jsonify(registeredUserData)
     # else : 
         # res = res
     return jsonify(response)
-
-    '''
-    milikku yang primitif tp aku suka hue bye
-
-    if os.path.exists(registeredUserFileLocation):
-        registeredUserData = readFile(registeredUserFileLocation)
-
-         # cek username nya udah pernah dipake belum
-        res = ''
-        position = -1
-        for i in range(len(registeredUserData["registeredUsers"])) :
-            registeredUser = registeredUserData["registeredUsers"][i]
-            if (registeredUser["username"] == body["username"]) :
-                res = "Username nya udah dipake maz"
-                position = i
-                break
-            if (registeredUser["email"] == body["email"]):
-                res = "Km udah pernah daftar pake email ini loh"
-                position = i
-                break
-        if (position == -1):
-            registeredUserData["registeredUsers"].append(body) 
-            toBeWritten = str(json.dumps(registeredUserData))
-            writeFile(registeredUserFileLocation,toBeWritten)
-            
-            res = jsonify(registeredUserData)
-        else : 
-            res = res
-    else:
-        registeredUserData["registeredUsers"].append(body) 
-        toBeWritten = str(json.dumps(registeredUserData))
-        writeFile(registeredUserFileLocation,toBeWritten)
-        res = jsonify(registeredUserData)
-
-    return res
-    '''
 
 #####################################################################################################
 # LOGIN USER
@@ -138,7 +101,6 @@ def loginUser():
                 response["error"] = False
                 if (decrypt(registeredUser["password"]) == body["password"]) :
                     response["message"] = "Login berhasssil"
-                    # response["status"] = True
                     data = {
                         "token" : generateToken(body["username"]),
                         "username" : body["username"]
@@ -147,7 +109,6 @@ def loginUser():
                     break
                 else:
                     response["message"] = "Passwordnya salah ih"
-                    # response["status"] = False
 
          # kalau user yang di login ga ada di registered user
         if (position == -1) :
@@ -157,29 +118,3 @@ def loginUser():
     return jsonify(response)
 
 
-    '''
-    # ngebuka file yang udah pernah regist
-    registeredUserData = readFile(registeredUserFileLocation)
-
-    # nyari yang di-login udah ada di regist atau belum
-    position = -1
-    for i in range(len(registeredUserData["registeredUsers"])) :
-        registeredUser = registeredUserData["registeredUsers"][i]
-        if (registeredUser["username"] == body["username"]) :
-            position = i
-            if (decrypt(registeredUser["password"]) == body["password"]) :
-                body["message"] = "Login berhasssil"
-                body["status"] = True
-                body["token"] = generateToken(body["username"])
-                break
-            else:
-                body["message"] = "Passwordnya salah ih"
-                body["status"] = False
-    
-    # kalau user yang di login ga ada di registered user
-    if (position == -1) :
-        body["message"] = "Regist dl ah"
-        body["status"] = False
-    
-    return jsonify(body)
-    '''
