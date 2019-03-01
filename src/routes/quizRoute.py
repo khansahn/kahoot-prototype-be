@@ -39,17 +39,23 @@ def createQuiz():
         quizData = readFile(quizFileLocation)
     except:
         print("ga ada file yang di-load yahh")
+    else:
+        isQuizIdIsUsed = False
+        for quiz in quizData["quizzes"] :
+            if (body["quiz-id"] == quiz["quiz-id"]):
+                isQuizIdIsUsed = True
+                response["message"] = "quiz id udah dipake, ganti dong"
+                break
+        
+        if isQuizIdIsUsed == False:
+            quizData["quizzes"].append(body)
+            quizData["total-quiz-available"] += 1
+            toBeWritten = str(json.dumps(quizData))
+            writeFile(quizFileLocation,toBeWritten)
 
-    quizData["quizzes"].append(body)
-    quizData["total-quiz-available"] += 1
-    # quizData["quiz-creator"] = username
-    toBeWritten = str(json.dumps(quizData))
-    writeFile(quizFileLocation,toBeWritten)
-
-    response["error"] = False #karena ga ngecek apa2 jg sih ya kecuali kalau nanti mau ngecek quiz id nya
-    response["message"] = "quiz berhasil dibikin"
-    response["data"] = body
-    # response["data"] = quizData
+            response["error"] = False
+            response["message"] = "kuis berhasil dibuat"
+            response["data"] = body
 
     return jsonify(response)
 
@@ -87,6 +93,7 @@ def getQuiz(quizId):
         "message" : "",
         "data" : {}
     }
+
     try: 
         quizData = readFile(quizFileLocation)
     except:
@@ -157,6 +164,73 @@ def getQuiz(quizId):
 @verifyLogin
 def updateDeleteQuiz(quizId):
     print("======IS NOW LOGGING INNNN======", g.username)
+
+    response = {
+        "error" : True,
+        "message" : ""
+    }
+
+    try:
+        quizData = readFile(quizFileLocation)
+    except:
+        response["message"] = "gagal load quiz file"
+    else: 
+        # nyari quiz nya ada atau engga
+        isQuizFound = False
+        for quiz in quizData["quizzes"] :
+            if (int(quizId) == quiz["quiz-id"]):
+                isQuizFound = True
+                position = quizData["quizzes"].index(quiz)
+                break
+
+        if (isQuizFound):
+            response["error"] = False
+            response["message"] = str(quizData["quizzes"][position]["quiz-id"]) + " yaaaaaa??? " + str(quizData["quizzes"][position]["quiz-title"])
+
+            # kalau data yg mau di-update atau di-delete udah ketemu, baru deh
+            # kalau PUT, berarti quiz-title sama quiz-category di file diganti jd dari yang baru dari body
+            if request.method == "PUT" :
+                body = request.json
+                quizData["quizzes"][position] = {**quizData["quizzes"][position], **body}
+                response["data"] = quizData["quizzes"][position]
+
+            elif request.method == "DELETE" :   
+                # ngehapus question di quiz ybs dl
+                questionData = readFile(questionFileLocation)
+
+                # kayaknya sih ini ngedelete nya udah semua meski question-id nya sama
+                lenQL = 0
+                QLInd = []
+                for question in questionData["questions"] :
+                    i = questionData["questions"].index(question) 
+                    if (question["quiz-id"] == int(quizId)):
+                        lenQL += 1
+                        QLInd.append(i)
+                
+                currentDeletingIndex = 0
+                deleted = 0
+                for i in range(lenQL):
+                    currentDeletingIndex = QLInd[i] - deleted
+                    del questionData["questions"][currentDeletingIndex]
+                    deleted += 1
+
+                toBeWritten = str(json.dumps(questionData))
+                writeFile(questionFileLocation,toBeWritten)            
+
+                # ngehapus quiz nya
+                del quizData["quizzes"][position]
+                quizData["total-quiz-available"] -= 1
+
+                response["data"] = "quiz-id " + str(quizId) + " is deleted"
+            
+            toBeWritten = str(json.dumps(quizData))
+            writeFile(quizFileLocation,toBeWritten)
+
+
+        else:
+            response["message"] = "quiz gak ketemuu mau update/delete apaan hue"
+
+    '''
     quizData = readFile(quizFileLocation)
 
     # nyari quiz yg mau di-update atau di-delete dl
@@ -207,5 +281,6 @@ def updateDeleteQuiz(quizId):
         
         toBeWritten = str(json.dumps(quizData))
         writeFile(quizFileLocation,toBeWritten)
+        '''
 
-    return res
+    return jsonify(response)

@@ -125,6 +125,110 @@ def joinGame():
 def submitAnswer():
     body = request.json
 
+    response = {
+        "error" : True,
+        "message" : "",
+        "data" : {}
+    }
+
+    try:
+        gameData = readFile(gameFileLocation)
+    except:
+        response["message"] = "gagal load game file"
+    else:
+        isGameFound = False
+        position = -1
+        for game in gameData["game-list"] :
+            if game["game-pin"] == body["game-pin"] and game["quiz-id"] == body["quiz-id"]: 
+                isGameFound = True
+                gameToBePlayed = game
+                response["message"] = "ketemuuu kamu ngejawab game " + str(gameToBePlayed["game-pin"])
+                position = gameData["game-list"].index(gameToBePlayed)
+                break
+
+        if isGameFound:
+            # udah ketemu game nya, update leaderboard nya
+            tempLeaderboard = []
+            tempLeaderboard = gameToBePlayed["leaderboard"]
+
+            try:
+                questionData = readFile(questionFileLocation)
+            except:
+                response["message"] = "question file gagal ke load"
+            else:
+                # ngecek jawaban ke questiondata, sekaligus update score di leaderboard
+                # cek dulu quiz dan questionnya ada atau ga
+                isQuestionInQuizFound = False
+                for question in questionData["questions"] :
+                    if (question["quiz-id"] == (body["quiz-id"]) and question["question-id"] == (body["question-id"])) : 
+                        isQuestionInQuizFound = True
+                        position = questionData["questions"].index(question)
+                        break
+
+                if isQuestionInQuizFound:
+                    if (body["username"] in gameToBePlayed["user-list"]):
+                        for userData in tempLeaderboard:
+                            if (userData["username"] == body["username"]):                    
+                                if (question["answer"] == body["answer"]):
+                                    # res = "Truuuuuuuu"
+                                    response["message"] = "Benarrr"
+                                    userData["score"] += 100
+                                else:  
+                                    # res = "Y salah"
+                                    response["message"] = "Y salahhhh"
+                                    userData["score"] += 0
+                                break
+
+                        # write gamefile updated
+                        gameData["game-list"][position]["leaderboard"] = tempLeaderboard
+                        toBeWritten = str(json.dumps(gameData))
+                        writeFile(gameFileLocation,toBeWritten) 
+                                
+                        response["error"] = False
+                        response["data"] = tempLeaderboard
+                        print("///////////MASUKKKK", gameToBePlayed["game-pin"],gameToBePlayed
+                        ["user-list"])
+                        print(body["username"] in gameToBePlayed["user-list"])
+                        
+                    else:
+                        response["message"] = "km ga join game ini wuoyy"
+                        
+                else:
+                    response["message"] = "ngejawab pertanyaan di kuis apaa gak ada"
+
+
+
+                # for question in questionData["questions"] :
+                #     if (question["quiz-id"] == (body["quiz-id"]) and question["question-id"] == (body["question-id"])) : 
+                #         # ngecek username ada di game atau ga
+                #         try: 
+                #             body["username"] in gameToBePlayed["user-list"]
+                #         except:
+                #             response["message"] = "km ga join di game ini"
+                #         else:
+                #             for userData in tempLeaderboard:
+                #                 if (userData["username"] == body["username"]):                    
+                #                     if (question["answer"] == body["answer"]):
+                #                         # res = "Truuuuuuuu"
+                #                         response["message"] = "Benarrr"
+                #                         userData["score"] += 100
+                #                     else:  
+                #                         # res = "Y salah"
+                #                         response["message"] = "Y salahhhh"
+                #                         userData["score"] += 0
+                #                     break
+                
+                # # write gamefile updated
+                # gameData["game-list"][position]["leaderboard"] = tempLeaderboard
+                # toBeWritten = str(json.dumps(gameData))
+                # writeFile(gameFileLocation,toBeWritten)  
+                
+                # response["error"] = False
+                # response["data"] = tempLeaderboard
+        else:
+            response["message"] = "km main game apa ga ketemu"
+
+    '''
     # ngecek jawaban sambil update skor dan leaderboard
     gameData = readFile(gameFileLocation)
 
@@ -157,14 +261,55 @@ def submitAnswer():
     gameData["game-list"][position]["leaderboard"] = tempLeaderboard
     toBeWritten = str(json.dumps(gameData))
     writeFile(gameFileLocation,toBeWritten)
+    '''
     
-    return res
+    return jsonify(response)
 
 #################################################################################
 # LEADERBOARDS
 #################################################################################
 @router.route('/game/leaderboard/<gamePin>')
 def viewLeaderboard(gamePin):
+
+    response = {
+        "error" : "True",
+        "message" : ""
+    }
+
+    try:
+        gameData = readFile(gameFileLocation)
+    except:
+        response["message"] = "gagal load game file"
+    else:
+        isGameFound = False
+        for game in gameData["game-list"] :
+            if game["game-pin"] == int(gamePin):
+                res =  (game["leaderboard"])
+                gameFound = game["leaderboard"]
+                isGameFound = True                
+                break
+        
+        if isGameFound:
+            response["error"] = False
+            nData = len(gameFound)
+            sortedLeaderboard = []
+            while (len(sortedLeaderboard) != nData):
+                biggest = gameFound[0]["score"]
+                biggestPosition = 0
+                for i in range(len(gameFound)):
+                    if (gameFound[i]["score"] >= biggest):
+                        biggest = gameFound[i]["score"]
+                        data = gameFound[i]
+                        biggestPosition = i
+                sortedLeaderboard.append(data)
+                gameFound.pop(biggestPosition)
+            
+            response["message"] = "Leaderboard game-pin " + gamePin
+            response["data"] = sortedLeaderboard
+        else:
+            response["message"] = "game dgn pin tsb gak adaaa mz"
+            
+    '''        
     gameData = readFile(gameFileLocation)
 
     res = ''
@@ -185,5 +330,6 @@ def viewLeaderboard(gamePin):
                 biggestPosition = i
         sortedLeaderboard.append(data)
         res.pop(biggestPosition)
+    '''
 
-    return jsonify(sortedLeaderboard)
+    return jsonify(response)

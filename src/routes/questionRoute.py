@@ -150,7 +150,48 @@ def getThatQuestion(quizId,questionId):
 @verifyLogin
 def updateDeleteQuestion(quizId,questionId):
     print("======IS NOW LOGGING INNNN======", g.username)
+
+    response = {
+        "error" : True,
+        "message" : ""
+    }
+
+    try:
+        questionData = readFile(questionFileLocation)
+    except:
+        response["message"] = "gagal load question file"
+    else:
+        isQuestionInQuizXFound = False
+
+        for question in questionData["questions"] :
+            if (question["quiz-id"] == int(quizId) and question["question-id"] == int(questionId)) :
+                isQuestionInQuizXFound = True
+                position = questionData["questions"].index(question)
+                break
+
+        if isQuestionInQuizXFound:
+            response["error"] = False
+            response["message"] = str(questionData["questions"][position]["quiz-id"]) + " yang nomor " + str(questionData["questions"][position]["question-id"])
+
+            # kalau ketemu data nya baru dipisah antara PUT dan DELETE nyaaa
+            if request.method == "PUT" :
+                body = request.json
+                questionData["questions"][position] = {**questionData["questions"][position], **body}
+
+                response["data"] = questionData["questions"][position]
+
+            elif request.method == "DELETE" :
+                del questionData["questions"][position]
+
+                response["data"] = questionId + " di " + quizId + " dihapus"
+                
+
+            toBeWritten = str(json.dumps(questionData))
+            writeFile(questionFileLocation,toBeWritten)
+        else:
+            response["message"] = "question yang mana ya ga ketemu"
     
+    '''
     questionData = readFile(questionFileLocation)
 
     # nyari question yang mau di-update atau di-delete
@@ -177,8 +218,9 @@ def updateDeleteQuestion(quizId,questionId):
 
         toBeWritten = str(json.dumps(questionData))
         writeFile(questionFileLocation,toBeWritten)
+    '''
 
-    return res
+    return jsonify(response)
 
 #################################################################################
 # GET QUESTION IN SPECIFIC QUIZ-ID ((deprecated krn fungsinya di file quizRoute))
