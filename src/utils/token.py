@@ -17,4 +17,6 @@ def decode(data):
         decoded = jwt.decode(data,os.getenv("SECRET"),algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
         abort(403)
+    except jwt.DecodeError:
+        abort(403)
     return decoded

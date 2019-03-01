@@ -20,6 +20,7 @@ questionFileLocation = baseLocation / "data" / "question-file.json"
 def createQuestion():
     print("======IS NOW LOGGING INNNN======", g.username)
     body = request.json
+    
     response = {
         "error" : True,
         "message" : "",

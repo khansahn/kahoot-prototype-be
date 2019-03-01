@@ -163,7 +163,7 @@ def submitAnswer():
                 for question in questionData["questions"] :
                     if (question["quiz-id"] == (body["quiz-id"]) and question["question-id"] == (body["question-id"])) : 
                         isQuestionInQuizFound = True
-                        position = questionData["questions"].index(question)
+                        questionPosition = questionData["questions"].index(question)
                         break
 
                 if isQuestionInQuizFound:
@@ -185,9 +185,6 @@ def submitAnswer():
                                 
                         response["error"] = False
                         response["data"] = tempLeaderboard
-                        print("///////////MASUKKKK", gameToBePlayed["game-pin"],gameToBePlayed
-                        ["user-list"])
-                        print(body["username"] in gameToBePlayed["user-list"])
                         
                     else:
                         response["message"] = "km ga join game ini wuoyy"
@@ -219,7 +216,6 @@ def viewLeaderboard(gamePin):
         isGameFound = False
         for game in gameData["game-list"] :
             if game["game-pin"] == int(gamePin):
-                res =  (game["leaderboard"])
                 gameFound = game["leaderboard"]
                 isGameFound = True                
                 break

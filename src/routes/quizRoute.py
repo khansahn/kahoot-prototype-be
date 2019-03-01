@@ -35,27 +35,31 @@ def createQuiz():
     # if os.path.exists(quizFileLocation):
     #     quizData = readFile(quizFileLocation)
     # kalau ini langsung baca file nya kalau ga ada ya yaudah gapapa
+    fileIsEmpty = True
+    isQuizIdIsUsed = False
     try:
         quizData = readFile(quizFileLocation)
+        fileIsEmpty = False
     except:
-        print("ga ada file yang di-load yahh")
+        fileIsEmpty = True
     else:
-        isQuizIdIsUsed = False
+        # isQuizIdIsUsed = False
         for quiz in quizData["quizzes"] :
             if (body["quiz-id"] == quiz["quiz-id"]):
                 isQuizIdIsUsed = True
                 response["message"] = "quiz id udah dipake, ganti dong"
                 break
-        
-        if isQuizIdIsUsed == False:
-            quizData["quizzes"].append(body)
-            quizData["total-quiz-available"] += 1
-            toBeWritten = str(json.dumps(quizData))
-            writeFile(quizFileLocation,toBeWritten)
+            
+    if fileIsEmpty or isQuizIdIsUsed == False:
+        quizData["quizzes"].append(body)
+        quizData["total-quiz-available"] += 1
+        toBeWritten = str(json.dumps(quizData))
+        writeFile(quizFileLocation,toBeWritten)
 
-            response["error"] = False
-            response["message"] = "kuis berhasil dibuat"
-            response["data"] = body
+        response["error"] = False
+        response["message"] = "kuis berhasil dibuat"
+        response["data"] = body
+
 
     return jsonify(response)
 
@@ -97,7 +101,7 @@ def getQuiz(quizId):
     try: 
         quizData = readFile(quizFileLocation)
     except:
-        response["message"] = "error load data"
+        response["message"] = "error load data quiz file"
     else:        
         for quiz in quizData["quizzes"] :
             if (quiz["quiz-id"] == int(quizId)):
@@ -112,7 +116,7 @@ def getQuiz(quizId):
             try:
                 questionData = readFile(questionFileLocation)
             except:
-                response["message"] = "ga ada question apa pun lol"
+                response["message"] = "ga ada question apa pun lol gagal load question file"
             else:
                 for question in questionData["questions"] :
                     if (question["quiz-id"] == int(quizId)):
@@ -164,26 +168,29 @@ def updateDeleteQuiz(quizId):
 
             elif request.method == "DELETE" :   
                 # ngehapus question di quiz ybs dl
-                questionData = readFile(questionFileLocation)
+                try: 
+                    questionData = readFile(questionFileLocation)
+                except:
+                    response["message"] = "gagal load question file"
+                else:
+                    lenQL = 0
+                    QLInd = []
+                    for question in questionData["questions"] :
+                        i = questionData["questions"].index(question) 
+                        if (question["quiz-id"] == int(quizId)):
+                            lenQL += 1
+                            QLInd.append(i)
+                    
+                    currentDeletingIndex = 0
+                    deleted = 0
+                    for i in range(lenQL):
+                        currentDeletingIndex = QLInd[i] - deleted
+                        del questionData["questions"][currentDeletingIndex]
+                        deleted += 1
 
-                # kayaknya sih ini ngedelete nya udah semua meski question-id nya sama
-                lenQL = 0
-                QLInd = []
-                for question in questionData["questions"] :
-                    i = questionData["questions"].index(question) 
-                    if (question["quiz-id"] == int(quizId)):
-                        lenQL += 1
-                        QLInd.append(i)
-                
-                currentDeletingIndex = 0
-                deleted = 0
-                for i in range(lenQL):
-                    currentDeletingIndex = QLInd[i] - deleted
-                    del questionData["questions"][currentDeletingIndex]
-                    deleted += 1
-
-                toBeWritten = str(json.dumps(questionData))
-                writeFile(questionFileLocation,toBeWritten)            
+                    toBeWritten = str(json.dumps(questionData))
+                    writeFile(questionFileLocation,toBeWritten) 
+                          
 
                 # ngehapus quiz nya
                 del quizData["quizzes"][position]

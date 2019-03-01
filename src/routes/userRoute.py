@@ -109,6 +109,7 @@ def loginUser():
                     break
                 else:
                     response["message"] = "Passwordnya salah ih"
+                    response["error"] = False
 
          # kalau user yang di login ga ada di registered user
         if (position == -1) :
