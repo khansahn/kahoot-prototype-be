@@ -1,6 +1,6 @@
-# refactored-octo-broccoli-kahoot
+# Kahoot-Prototype
 
-Refactored Octo Broccoli Kahoot is a simple project I am developing in a class I am enrolled in. It is inspired by the [`Kahoot.it`][kahoot] and it's in the `Python` language.
+This (was previously Refactored Octo Broccoli Kahoot) is a simple project I am developing in a class I am enrolled in. It is inspired by the [`Kahoot.it`][kahoot] and it's in the `Python` language.
 
 ## Before You Get Started
 There are few things you should have installed before we begin. I am using `VSCode` as my text editor, but you can use any text editor you prefer to. I assume you have `Python` installed in your system.
