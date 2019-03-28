@@ -1,3 +1,4 @@
+'''
 from flask import Flask, request, json, jsonify
 import os
 from pathlib import Path
@@ -117,5 +118,200 @@ def loginUser():
             # response["status"] = False
     
     return jsonify(response)
+'''
 
+###########################################################################################
+###########################################################################################
+###########################################################################################
+
+from flask import Flask, request, json, jsonify, make_response
+import os
+from pathlib import Path
+
+from ..utils.crypt import encrypt, decrypt
+from ..utils.authorisation import generateToken
+
+from ..utils.models import db, RegisteredUser
+
+from . import router, baseLocation
+
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.sql import exists
+from sqlalchemy import func
+
+# db = SQLAlchemy()
+
+print(os.getenv("SECRET_KEY"))
+
+@router.route('/alaala')
+def alaala():
+    return "HOY"
+#####################################################################################################
+# REGISTER USER
+#####################################################################################################
+@router.route('/user', methods=['POST'])
+def registerUser():
+    body = request.json
+
+    if body["todo"] == "encrypt":
+        body["password"] = encrypt(body["password"])
+    elif body["todo"] == "decrypt":
+        body["password"] = decrypt(body["password"])
+
+    username = body["username"]
+    email = body["email"]
+    password = body["password"]
+    fullname = body["fullname"]
+
+    response = {
+        "error" : True,
+        "message" : "",
+        "data" : {}
+    }
+
+    # cek username udah dipake belum
+    usernameExist = db.session.query(RegisteredUser).filter_by(username = username).scalar() is not None
+    emailExist = db.session.query(RegisteredUser).filter_by(email = email).scalar() is not None
+    
+    if (usernameExist == True or emailExist == True):
+        response["message"] = "username/email is already exist"
+    else:
+        try:            
+            user = RegisteredUser(
+                username = username,
+                email = email,
+                password = password,
+                fullname = fullname)
+
+            db.session.add(user)
+            db.session.commit()
+
+            response["message"] =  "User created. User-id = {}".format(user.user_id)
+            response["error"] = False
+            response["data"] = user.serialise()
+        except Exception as e:
+            response["message"] = str(e)
+        finally:
+            db.session.close()
+
+    
+    return jsonify(response)
+
+
+
+#####################################################################################################
+# LOGIN USER
+#####################################################################################################
+@router.route('/user/login', methods = ['POST'])
+def loginUser():
+    body = request.json
+
+    response = {
+        "error" : True,
+        "message" : "",
+        "data" : {}
+    }
+    errorCode = 404
+
+    # cek username ada atau engga
+    usernameExist = db.session.query(RegisteredUser).filter_by(username = body["username"]).scalar() is not None
+
+    if (usernameExist == True) :
+        try:
+            user = db.session.query(RegisteredUser).filter_by(username = body["username"]).first()
+            user.serialise()
+            if (decrypt(user.password) == body["password"]):
+                data = {
+                    "token" : generateToken(body["username"]),
+                    "username" : body["username"]
+                }
+                response["message"] = "Login berhasil"
+                response["error"] = False
+                response["data"] = data
+                errorCode = 200
+
+            else:
+                response["message"] = "Incorrect gov eh pass"
+                errorCode = 401
+
+        except Exception as e:
+            response["message"] = str(e)
+
+        finally:
+            db.session.close()
+
+    else:
+        response["message"] = "Username is not registered"
+        errorCode = 401
+    return jsonify(response), errorCode
+
+
+def setCookies(username):
+    resp = make_response('')
+    resp.set_cookie('username',username)
+    return resp
+
+
+###############################################################################
+########//////////////////////////////////////////////////////////////#########
+###############################################################################
+
+
+@router.route('/getAllRegisteredUsers', methods=['GET'])
+def getAllRegisteredUsers():
+    response = {
+        "error" : True,
+        "message" : "",
+        "data" : {}
+    }
+    
+    # cek username ada atau engga
+    usernameExist = db.session.query(RegisteredUser).order_by(RegisteredUser.user_id).all() is not None
+
+    if (usernameExist == True) :
+        try:
+            registeredUsers = RegisteredUser.query.order_by(RegisteredUser.user_id).all()
+
+            data = ([e.returnToUser() for e in registeredUsers])
+            registeredUsersCount  = len(data)
+            response["message"] = "User(s) found : " + str(registeredUsersCount)
+            response["error"] = False
+            response["data"] = data
+        except Exception as e:
+            response["message"] = str(e)
+        finally:
+            db.session.close()
+
+    else:
+        response["message"] = "User is not found"
+    
+    return jsonify(response)
+
+@router.route('/getUserByUsername/<username>')
+def getUserById(username):
+    response = {
+        "error" : True,
+        "message" : "",
+        "data" : {}
+    }
+
+    # cek username ada atau engga
+    usernameExist = db.session.query(RegisteredUser).filter_by(username = username).scalar() is not None
+
+    if (usernameExist == True) :
+        try:
+            user = RegisteredUser.query.filter_by(username = username).first()
+
+            response["message"] ="User found"
+            response["error"] = False
+            response["data"] = (user.returnToUser())
+        except Exception as e:
+            response["message"] = str(e)
+        finally:
+            db.session.close()
+
+    else :
+        response["message"] = "Username is not found"
+
+    return jsonify(response)
 

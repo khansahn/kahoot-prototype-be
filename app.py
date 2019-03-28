@@ -1,11 +1,38 @@
-from flask import Flask, request, abort, jsonify
+from flask import Flask, request, abort, jsonify, make_response
 import jwt
 
 from src.routes import router
+from src.utils.models import db
 # from src.routes import router
+
+from flask_cors import CORS
+
 
 app = Flask(__name__)   #buat manggil flask
 app.register_blueprint(router)
+
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.sql import exists
+
+# db = SQLAlchemy()
+CORS(app)
+
+
+POSTGRES = {
+    'user' : 'postgres',
+    'pw' : 'postgres',
+    'db' : 'kahoot',
+    'host' : 'localhost',
+    'port' : '3794'
+}
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+#postgresql: //username:password@localhost:3794/database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://%(user)s:%(pw)s@%(host)s:%(port)s/%(db)s'% POSTGRES
+
+db.init_app(app)
+
+
 
 @app.route('/addition/<int:firstNumber>/<int:secondNumber>')
 def addition(firstNumber,secondNumber):
