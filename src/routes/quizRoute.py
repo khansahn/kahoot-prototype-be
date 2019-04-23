@@ -213,7 +213,7 @@ def updateDeleteQuiz(quizId):
 ###############///////////////////////////////////////////////######################
 ####################################################################################
 
-from flask import Flask, request, json, jsonify, g
+from flask import Flask, request, json, jsonify, g, make_response
 import os
 from pathlib import Path
 
@@ -247,6 +247,8 @@ def createQuiz():
         "data" : {}
     }
 
+    errorCode = 404
+
     try:
         user = RegisteredUser.query.filter_by(username = username).first()
         quiz = Quiz(
@@ -260,13 +262,18 @@ def createQuiz():
         response["message"] =  "Quiz added. Quiz-id = {}".format(quiz.quiz_id)
         response["error"] = False
         response["data"] = quiz.serialise()
+
+        errorCode = 200
+    
     except Exception as e:
         response["message"] =  str(e)
+        errorCode = 404
+
     finally:
         db.session.close()
 
 
-    return jsonify(response)
+    return jsonify(response), errorCode
 
 
 #################################################################################
@@ -314,25 +321,32 @@ def getQuiz(quizId):
         "message" : "",
         "data" : {}
     }
+
+    errorCode = 404
     
     # cek quiz ada atau engga
     quizExist = db.session.query(Quiz).filter_by(quiz_id = quizId).scalar() is not None
 
     if (quizExist == True):
         try:
-            quiz = Quiz.query.filter_by(quiz_id = quizId).first()
+            quiz = Quiz.query.filter_by(quiz_id = quizId, status_enabled = True).first()
             response["message"] = "Quiz is found"
             response["error"] = False
             response["data"] = (quiz.serialise())
+            errorCode = 200
         except Exception as e:
             response["message"] =  str(e)
+            errorCode = 404
+
         finally:
             db.session.close()
 
     else :
         response["message"] = "Quiz is not found"
+        errorCode = 404
 
-    return jsonify(response)
+
+    return jsonify(response), errorCode
 
 
 

@@ -1,4 +1,4 @@
-from flask import jsonify
+from flask import jsonify, make_response
 from . import router
 
 
@@ -8,7 +8,7 @@ def errorhandler403(e):
         "error" : 403,
         "message" : "belum login atau login expired"
     }
-    return jsonify(response)
+    return jsonify(response), 403
 
 @router.errorhandler(404)
 def errorhandler404(e):
@@ -16,7 +16,7 @@ def errorhandler404(e):
         "error" : 404,
         "message" : "halaman yg anda tuju, indak adooo"
     }
-    return jsonify(response)
+    return jsonify(response), 404
 
 @router.errorhandler(500)
 def errorhandler500(e):
@@ -24,4 +24,4 @@ def errorhandler500(e):
         "error" : 500,
         "message" : "punten server lg error hhe"
     }
-    return jsonify(response)
+    return jsonify(response), 500

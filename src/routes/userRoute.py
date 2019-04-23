@@ -169,12 +169,16 @@ def registerUser():
         "data" : {}
     }
 
+    errorCode = 404
+
+
     # cek username udah dipake belum
     usernameExist = db.session.query(RegisteredUser).filter_by(username = username).scalar() is not None
     emailExist = db.session.query(RegisteredUser).filter_by(email = email).scalar() is not None
     
     if (usernameExist == True or emailExist == True):
         response["message"] = "username/email is already exist"
+        errorCode = 406
     else:
         try:            
             user = RegisteredUser(
@@ -189,13 +193,15 @@ def registerUser():
             response["message"] =  "User created. User-id = {}".format(user.user_id)
             response["error"] = False
             response["data"] = user.serialise()
+            errorCode = 200
         except Exception as e:
             response["message"] = str(e)
+            errorCode = 404
         finally:
             db.session.close()
 
     
-    return jsonify(response)
+    return jsonify(response), errorCode
 
 
 

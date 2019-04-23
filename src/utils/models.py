@@ -75,13 +75,18 @@ class Quiz(db.Model):
         return '<quiz id {}>'.format(self.quiz_id)
 
     def serialise(self):
+        user = RegisteredUser.query.filter_by(user_id = self.creator_id).first()
+        question = Question.query.filter_by(quiz_id = self.quiz_id, status_enabled = True).all()
+
         return {
             'quiz_id' : self.quiz_id,
             'quiz' : self.quiz,
             'quiz_category' : self.quiz_category,
             'creator_id' : self.creator_id,
+            'creator_fullname' : user.fullname,
+            'creator_username' : user.username,
             'status_enabled' : self.status_enabled,
-            'question_list' : [{'question_id': e.question_id, 'question' : e.question, 'status_enabled': e.status_enabled} for e in self.question]
+            'question_list' : [e.serialise() for e in question]
         }
 
     # def allQuizInfo(self):

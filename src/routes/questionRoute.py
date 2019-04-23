@@ -211,7 +211,7 @@ def updateDeleteQuestion(quizId,questionId):
 '''
 
 
-from flask import Flask, request, json, jsonify, g, abort
+from flask import Flask, request, json, jsonify, g, abort, make_response
 import os
 from pathlib import Path
 
@@ -238,7 +238,6 @@ questionFileLocation = baseLocation / "data" / "question-file.json"
 @router.route('/question', methods = ['POST']) #default method itu GET
 @verifyLogin
 def createQuestion():
-    print("======IS NOW LOGGING INNNN======", g.username)
     body = request.json
     
     response = {
@@ -246,6 +245,8 @@ def createQuestion():
         "message" : "",
         "data" : {}
     }
+
+    errorCode = 404
 
     quizExist = db.session.query(Quiz).filter_by(quiz_id = body['quiz-id']).scalar() is not None
 
@@ -255,20 +256,26 @@ def createQuestion():
             response["data"] = res.serialise()
             response["message"] = "Question Created"
             response["error"] = False
+            errorCode = 200
         except Exception as e:
             response["message"] =  str(e)
+            errorCode = 400
         finally:
+            db.session.expunge_all()
             db.session.close()
 
     else:
         response["message"] = "Quiz enggak ada"
+        errorCode = 404
+    
+    
+    db.session.close()
 
-    return jsonify(response)
+    return jsonify(response), errorCode
 
 @router.route('/questionMultiple', methods = ['POST']) #default method itu GET
 @verifyLogin
 def createQuestionMultiple():
-    print("======IS NOW LOGGING INNNN======", g.username)
     body = request.json
     
     response = {
@@ -276,6 +283,8 @@ def createQuestionMultiple():
         "message" : "",
         "data" : {}
     }
+
+    errorCode = 404
 
     quizExist = db.session.query(Quiz).filter_by(quiz_id = body['quiz-id']).scalar() is not None
 
@@ -291,15 +300,17 @@ def createQuestionMultiple():
             response["data"] = questionMade
             response["message"] = "Question(s) Created"
             response["error"] = False
+            errorCode = 200
         except Exception as e:
             response["message"] =  str(e)
+            errorCode = 400
         finally:
             db.session.close()
 
     else:
         response["message"] = "Quiz enggak ada"
 
-    return jsonify(response)
+    return jsonify(response), errorCode
 
 
 #################################################################################
@@ -331,7 +342,6 @@ def getAllQuestion():
 #################################################################################
 # GET SPECIFIC QUESTION IN SPECIFIC QUIZ-ID 
 #################################################################################
-'''
 @router.route('/quiz/<quizId>/question/<questionId>')
 @verifyLogin
 def getThatQuestion(quizId,questionId):
@@ -341,37 +351,37 @@ def getThatQuestion(quizId,questionId):
         "data" : {}
     }
 
-    try: 
-        questionData = readFile(questionFileLocation)
-    except:
-        response["message"] = "file question gagal di-load"
+    errorCode = 404
+
+    quizExist = db.session.query(Quiz).filter_by(quiz_id = quizId).scalar() is not None
+
+    if (quizExist == True):
+
+        questionExist = db.session.query(Question).filter_by(question_id = questionId).scalar() is not None
+        if (questionExist == True):
+            try:
+                question = Question.query.filter_by(question_id = questionId).first()
+
+                response["message"] =  "Question found. Qestuonnn = " + str(question.question)
+                response["data"] = question.serialise()
+                response["error"] = False
+                errorCode = 200
+            except Exception as e:
+                response["message"] = str(e)
+            finally:
+                db.session.close()
+
+        else:
+            response["message"] =  "Question is not founddd"
+            response["error"] = True
+
     else:
-        isQuestionFound = False
-        for question in questionData["questions"] :
-            if (question["question-id"] == int(questionId) and question["quiz-id"] == int(quizId)) :
-                response["data"] = question
-                response["message"] = "ketemu pertanyaannya"
-                isQuestionFound = True
-                break
-        if isQuestionFound == False:
-            response["message"] = "gak ada pertanyaan no " + str(questionId) + " di kuis " + str(quizId)
+        response["message"] =  "Quiz is not found"
+        response["error"] = True
 
-    return jsonify(response)
+    return jsonify(response), errorCode
 
-    
-    atau pake cara ini hue aku pusing
-    try:
-        for question in questionData["questions"] :
-            if (question["question-id"] == int(questionId) and question["quiz-id"] == int(quizId)) :
-                response["data"] = question
-                response["message"] = "ketemu pertanyaannya"
-                isQuestionFound = True
-                break
-        if isQuestionFound == False:
-            response["message"] = "gak ada pertanyaan no " + str(questionId) + " di kuis " + str(quizId)
-            abort(404)
 
-'''
 #################################################################################
 # UPDATE DELETE QUESTION
 #################################################################################
@@ -440,13 +450,12 @@ def createQuestionSingle(quizId,question,answer,options):
         question = Question(
             quiz_id = quizId,
             question = question,
-            answer = []
+            answer = [8]
         )
 
         db.session.add(question)
         db.session.commit()
         question.serialise()
-        print("HHHHH")
 
         getAnswerId = []
         # tambahin si optionnya
@@ -456,18 +465,16 @@ def createQuestionSingle(quizId,question,answer,options):
                 option = options[i])        
             db.session.add(option)
             db.session.commit()
-            option.serialise()
+            # option.serialise()
 
             if (i in answer):
-                getAnswerId.append(option.option_id)
+                getAnswerId.append(str(option.option_id))
 
         question.answer = getAnswerId
+        Question.query.filter_by(question_id = question.question_id).update(dict(answer=getAnswerId)) 
+
         db.session.commit()
         return question
-
         
     except Exception as e:  
         return str(e)
-
-    finally:
-        db.session.close()
