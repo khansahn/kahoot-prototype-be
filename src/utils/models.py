@@ -118,12 +118,22 @@ class Question(db.Model):
     updated_on = db.Column(db.DateTime, default =  datetime.datetime.now())
     status_enabled = db.Column(db.Boolean(), default = True)
     # options = db.Column(db.String())
-    options = db.relationship('Options',cascade="all,delete", backref='Question', lazy=True)
+    # options = db.relationship('Options',cascade="all,delete", backref='Question', lazy=True)
+    opta = db.Column(db.String())
+    optb = db.Column(db.String())
+    optc = db.Column(db.String())
+    optd = db.Column(db.String())
 
-    def __init__(self,quiz_id,question,answer):
+
+    def __init__(self,quiz_id,question,answer,optA,optB,optC,optD):
         self.quiz_id = quiz_id
         self.question = question
         self.answer = answer
+        self.opta = optA
+        self.optb = optB
+        self.optc = optC
+        self.optd = optD
+
         # self.options = options
 
     # buat ngereturn question id nya
@@ -137,37 +147,15 @@ class Question(db.Model):
             'question' : self.question,
             'answer' : self.answer,
             'status_enabled' : self.status_enabled,
-            'options' : [{'option_id': e.option_id, 'option': e.option} for e in self.options]
+            'options': {
+                'optA' : self.opta,
+                'optB' : self.optb,
+                'optC' : self.optc,
+                'optD' : self.optd
+            }
+            # 'options' : [{'option_id': e.option_id, 'option': e.option} for e in self.options]
         }
         
-
-    
-###############################################
-class Options(db.Model):
-    __tablename__ = 'options'
-
-    option_id = db.Column(db.Integer, primary_key = True)
-    question_id = db.Column(db.Integer(), db.ForeignKey('question.question_id'), nullable = False)
-    option = db.Column(db.String())
-    created_on = db.Column(db.DateTime, default =  datetime.datetime.now())
-    updated_on = db.Column(db.DateTime, default =  datetime.datetime.now())
-    status_enabled = db.Column(db.Boolean(), default = True)
-
-    def __init__(self,question_id,option):
-        self.question_id = question_id
-        self.option = option
-
-    # buat ngereturn question id nya
-    def __repr__(self):
-        return '<option id {}>'.format(self.option_id)
-
-    def serialise(self):
-        return {
-            'option_id' : self.option_id,
-            'question_id' : self.question_id,
-            'option' : self.option,
-            'status_enabled' : self.status_enabled
-        }
 
 
 ###############################################
@@ -231,7 +219,6 @@ class Leaderboard(db.Model):
     def serialise(self):
         userscore = [{'username': e.username, 'score': e.score} for e in self.userscore]
         userscore.sort(key = lambda x: x['score'], reverse=True)
-        print(userscore[0]['score'])
         return {
             'leaderboard_id' : self.leaderboard_id,
             'quiz_id' : self.quiz_id,
